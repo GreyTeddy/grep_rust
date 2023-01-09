@@ -11,12 +11,19 @@ impl Config {
         // get an iterator and only check for the first two arguments
         // to save on memory
         let mut iterator = env::args().skip(1);
-        let query = iterator.next().expect("No filename or query specified");
-        let file_path = iterator.next().expect("No filename specified");
+        let query = iterator.next().unwrap_or_else(|| {
+            eprintln!("Please specify filename and query."); 
+            std::process::exit(1);
+        });
+        let file_path = iterator.next().unwrap_or_else(|| {
+            eprintln!("Please specify filename."); 
+            std::process::exit(1);
+        });
 
         let ignore_case = env::var("IGNORE_CASE").is_ok();
         if !Path::new(&file_path).exists() {
-            panic!("File not found");
+            eprintln!("{file_path}: File not found.");
+            std::process::exit(1);
         }
 
         Config {
@@ -28,7 +35,10 @@ impl Config {
 }
 pub fn content(config: Config) -> String {
     let contents =
-        fs::read_to_string(config.file_path).expect("Should have been able to read the file");
+        fs::read_to_string(config.file_path).unwrap_or_else(|err| {
+            eprintln!("Not able to read the file: {err}"); 
+            std::process::exit(1);
+        });
     contents
 }
 
